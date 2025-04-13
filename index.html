@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>BrainTap - Voice</title>
+  <style>
+    body { text-align: center; font-family: Arial; background: #f2f2f2; direction: rtl; }
+    .word { font-size: 40px; margin: 40px; }
+    .info { font-size: 20px; margin: 20px; }
+    #timer { color: red; font-size: 30px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>BrainTap</h1>
+  <div id="word" class="word">ابدأ التحدي!</div>
+  <div class="info">
+    <div>النتيجة: <span id="score">0</span> / 5</div>
+    <div id="timer">5</div>
+  </div>
+  <button onclick="askMicrophonePermission()">تشغيل الميكروفون</button>
+  <button onclick="startGame()">ابدأ اللعبة</button>
+
+  <script>
+    const colors = ['أحمر', 'أخضر', 'أزرق', 'أصفر'];
+    const colorCodes = {
+      'أحمر': 'red',
+      'أخضر': 'green',
+      'أزرق': 'blue',
+      'أصفر': 'yellow'
+    };
+
+    let correctColor = '';
+    let score = 0;
+    let timer;
+    let timeLeft = 5;
+
+    // Voice recognition setup
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'ar-SA';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      const userSpeech = event.results[0][0].transcript.trim();
+      console.log("اللاعب قال:", userSpeech);
+      if (userSpeech === correctColor) {
+        handleSuccess();
+      } else {
+        handleFail();
+      }
+    };
+
+    recognition.onerror = (event) => {
+      alert("خطأ في التعرف على الصوت: " + event.error);
+      handleFail();
+    };
+
+    function askMicrophonePermission() {
+      recognition.start();
+      recognition.stop();
+      alert("إذا ظهرت نافذة الإذن، اختر 'سماح' لاستخدام المايك.");
+    }
+
+    function startGame() {
+      score = 0;
+      document.getElementById("score").textContent = score;
+      nextWord();
+    }
+
+    function nextWord() {
+      timeLeft = 5;
+      document.getElementById("timer").textContent = timeLeft;
+      const wordText = colors[Math.floor(Math.random() * colors.length)];
+      correctColor = colors[Math.floor(Math.random() * colors.length)];
+      const wordDiv = document.getElementById('word');
+      wordDiv.textContent = wordText;
+      wordDiv.style.color = colorCodes[correctColor];
+      startTimer();
+      recognition.start(); // Start listening
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").textContent = timeLeft;
+        if (timeLeft === 0) {
+          clearInterval(timer);
+          recognition.stop();
+          handleFail();
+        }
+      }, 1000);
+    }
+
+    function handleFail() {
+      alert("إجابة خاطئة أو انتهى الوقت! أعد المحاولة.");
+      document.getElementById("word").textContent = "ابدأ التحدي!";
+      score = 0;
+      document.getElementById("score").textContent = score;
+    }
+
+    function handleSuccess() {
+      clearInterval(timer);
+      recognition.stop();
+      score++;
+      document.getElementById("score").textContent = score;
+      if (score === 5) {
+        alert("مبروك! ربحت التحدي!");
+        document.getElementById("word").textContent = "ابدأ التحدي!";
+      } else {
+        nextWord();
+      }
+    }
+  </script>
+</body>
+</html>
